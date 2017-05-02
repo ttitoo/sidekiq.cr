@@ -56,7 +56,7 @@ end
 REDIS_KEYS = %w(redis_version uptime_in_days connected_clients used_memory_human used_memory_peak_human)
 
 get "/dashboard/stats" do |x|
-  x.redirect "#{x.root_path}stats"
+  x.redirect "/stats"
 end
 
 get "/stats" do |x|
@@ -123,14 +123,14 @@ end
 post "/queues/:name" do |x|
   name = x.params.url["name"]
   Sidekiq::Queue.new(name).clear
-  x.redirect "#{x.root_path}/queues"
+  x.redirect "/queues"
 end
 
 post "/queues/:name/delete" do |x|
   name = x.params.url["name"]
   val = x.params.body["key_val"]
   Sidekiq::JobProxy.new(val).delete
-  x.redirect x.url_with_query(x, "#{x.root_path}queues/#{name}")
+  x.redirect x.url_with_query(x, "/queues/#{name}")
 end
 
 get "/morgue" do |x|
@@ -144,7 +144,7 @@ get "/morgue/:key" do |x|
   element = x.params.url["key"]
   score, jid = element.split("-")
   dead = Sidekiq::DeadSet.new.fetch(score.to_f, jid).first
-  x.redirect "#{root_path}morgue" if dead.nil?
+  x.redirect "/morgue" if dead.nil?
   ecr("dead")
 end
 
@@ -155,17 +155,17 @@ post "/morgue" do |x|
     job = Sidekiq::DeadSet.new.fetch(score.to_f, jid).first?
     retry_or_delete_or_kill job, x.params.body if job
   end
-  x.redirect x.url_with_query(x, "#{x.root_path}morgue")
+  x.redirect x.url_with_query(x, "/morgue")
 end
 
 post "/morgue/all/delete" do |x|
   Sidekiq::DeadSet.new.clear
-  x.redirect "#{x.root_path}morgue"
+  x.redirect "/morgue"
 end
 
 post "/morgue/all/retry" do |x|
   Sidekiq::DeadSet.new.retry_all
-  x.redirect "#{x.root_path}morgue"
+  x.redirect "/morgue"
 end
 
 post "/morgue/:key" do |x|
@@ -173,7 +173,7 @@ post "/morgue/:key" do |x|
   score, jid = element.split("-")
   job = Sidekiq::DeadSet.new.fetch(score.to_f, jid).first?
   retry_or_delete_or_kill job, x.params.body if job
-  x.redirect x.url_with_query(x, "#{x.root_path}morgue")
+  x.redirect x.url_with_query(x, "/morgue")
 end
 
 get "/retries" do |x|
@@ -190,7 +190,7 @@ get "/retries/:key" do |x|
   if retri
     ecr("retry")
   else
-    x.redirect x.url_with_query(x, "#{x.root_path}retries")
+    x.redirect x.url_with_query(x, "/retries")
   end
 end
 
@@ -201,17 +201,17 @@ post "/retries" do |x|
     job = Sidekiq::RetrySet.new.fetch(score.to_f, jid).first?
     retry_or_delete_or_kill job, x.params.body if job
   end
-  x.redirect x.url_with_query(x, "#{x.root_path}retries")
+  x.redirect x.url_with_query(x, "/retries")
 end
 
 post "/retries/all/delete" do |x|
   Sidekiq::RetrySet.new.clear
-  x.redirect "#{x.root_path}retries"
+  x.redirect "/retries"
 end
 
 post "/retries/all/retry" do |x|
   Sidekiq::RetrySet.new.retry_all
-  x.redirect "#{x.root_path}retries"
+  x.redirect "/retries"
 end
 
 post "/retries/:key" do |x|
@@ -219,7 +219,7 @@ post "/retries/:key" do |x|
   score, jid = element.split("-")
   job = Sidekiq::RetrySet.new.fetch(score.to_f, jid).first?
   retry_or_delete_or_kill job, x.params.body if job
-  x.redirect x.url_with_query(x, "#{x.root_path}retries")
+  x.redirect x.url_with_query(x, "/retries")
 end
 
 get "/scheduled" do |x|
@@ -236,7 +236,7 @@ get "/scheduled/:key" do |x|
   if job
     ecr("scheduled_job_info")
   else
-    x.redirect "#{root_path}scheduled"
+    x.redirect "/scheduled"
   end
 end
 
@@ -248,7 +248,7 @@ post "/scheduled" do |x|
     job = ss.fetch(score.to_f, jid).first?
     delete_or_add_queue job, x.params.body if job
   end
-  x.redirect x.url_with_query(x, "#{x.root_path}scheduled")
+  x.redirect x.url_with_query(x, "/scheduled")
 end
 
 post "/scheduled/:key" do |x|
@@ -256,7 +256,7 @@ post "/scheduled/:key" do |x|
   score, jid = element.split("-")
   job = Sidekiq::ScheduledSet.new.fetch(score.to_f, jid).first?
   delete_or_add_queue job, x.params.body if job
-  x.redirect x.url_with_query(x, "#{x.root_path}scheduled")
+  x.redirect x.url_with_query(x, "/scheduled")
 end
 
 Sidekiq::Filesystem.files.each do |file|

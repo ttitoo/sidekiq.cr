@@ -62,6 +62,12 @@ module Sidekiq
     end
 
     def execute(ctx : Sidekiq::Context)
+      if klass == "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper"
+        r = JSON.parse(@args)
+        self.klass = r[0]["job_class"].as_s
+        self.args = r[0]["arguments"].as_a.to_json
+      end
+
       prc = @@jobtypes[klass]?
       raise "No such worker: #{klass}" if prc.nil?
 
